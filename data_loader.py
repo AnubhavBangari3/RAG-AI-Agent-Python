@@ -1,55 +1,97 @@
+# PDF reader from LlamaIndex
 from llama_index.readers.file import PDFReader
+
+# Text chunking utility
 from llama_index.core.node_parser import SentenceSplitter
+
+# Free local embedding model
 from sentence_transformers import SentenceTransformer
+
+# Type hint support
 from typing import List
 
 
-# Free local embedding model
+# -------------------------------------------------------------------
+# LOCAL EMBEDDING MODEL
+# -------------------------------------------------------------------
+
+# Load free HuggingFace embedding model locally
 embedding_model = SentenceTransformer(
+
+    # Small and fast embedding model
     "sentence-transformers/all-MiniLM-L6-v2"
 )
 
-# Embedding dimension for MiniLM model
+# Embedding dimension produced by MiniLM model
 EMBED_DIM = 384
 
 
-# Split large text into chunks
+# -------------------------------------------------------------------
+# TEXT SPLITTER CONFIGURATION
+# -------------------------------------------------------------------
+
+# Split long documents into overlapping chunks
 splitter = SentenceSplitter(
+
+    # Maximum chunk size
     chunk_size=1000,
+
+    # Overlap between chunks for better context continuity
     chunk_overlap=200
 )
 
 
-# Load PDF and split into chunks
-def load_and_chunk_pdf(path: str):
+# -------------------------------------------------------------------
+# LOAD PDF AND SPLIT INTO CHUNKS
+# -------------------------------------------------------------------
 
-    # Read PDF
-    docs = PDFReader().load_data(file=path)
+def load_and_chunk_pdf(
+    path: str
+):
 
-    # Extract text from pages
+    # Read PDF file
+    docs = PDFReader().load_data(
+        file=path
+    )
+
+    # Extract valid text from PDF pages
     texts = [
         d.text
         for d in docs
         if getattr(d, "text", None)
     ]
 
+    # Store final chunks
     chunks = []
 
-    # Split text into smaller chunks
+    # Split each page into smaller chunks
     for t in texts:
+
         chunks.extend(
             splitter.split_text(t)
         )
 
+    # Return all chunks
     return chunks
 
 
-# Generate embeddings locally for free
-def embed_texts(texts: List[str]) -> List[List[float]]:
+# -------------------------------------------------------------------
+# GENERATE TEXT EMBEDDINGS
+# -------------------------------------------------------------------
 
+def embed_texts(
+    texts: List[str]
+) -> List[List[float]]:
+
+    # Convert text into embeddings
     embeddings = embedding_model.encode(
+
+        # Input texts
         texts,
+
+        # Show embedding progress
         show_progress_bar=True
     )
 
+    # Convert numpy array into Python list
     return embeddings.tolist()
